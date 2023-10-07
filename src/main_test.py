@@ -1,41 +1,230 @@
-import os
-from func import (write_key_to_file, genkey, print_Key, write_to_file, read_from_file, write_hex_data_to_file, read_hex_data_from_file, unpad, pad, read_plain_text, aes_encrypt_block, aes_decrypt_block, result)
+# Import necessary modules
+import os            # Operating system-related functions
+import secrets       # Cryptographically strong random number generation
+from hashlib import sha256  # Hash function for secure hashing
+from base64 import b64encode, b64decode  # Encoding/decoding data in base64 format
 
-cipher_text = 'data/ciphertext.txt'
-iv = 'data/iv.txt'
-s_key = 'data/key.txt'
 
-print(read_from_file(cipher_text))
-def decrypt_aes_cbc(cipher, key, ini_v):
+
+
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def generate_key():
+    encryption_key = secrets.token_bytes(32)
+    return encryption_key
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def write_key_to_file(key, filename='data/key.txt'):
+    hex_key = key.hex()
+    with open(filename, 'w') as file:
+        file.write(hex_key)
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def read_key_from_file(filename='data/key.txt'):
+    try:
+        with open(filename, 'r') as file:
+            hex_key = file.read().strip()
+            key = bytes.fromhex(hex_key)
+        return key
+    except FileNotFoundError:
+        print(f"File '{filename}' not found.")
+        return None
+    
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def generate_random_key():
+    key = secrets.token_bytes(32)
+    return key
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def print_key(sk):
+    if sk:
+        print(f'Encryption Key:')
+        hex_values = ' '.join([format(byte, '02X') for byte in sk])
+        print(hex_values)
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def read_plain_text(filename='data/plaintext.txt'):
+    try:
+        with open(filename, 'r') as file:
+            text = file.read()
+        return text
+    except FileNotFoundError:
+        print(f"File '{filename}' not found.")
+        return None
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def encrypt_block(block, key):
+    key_hash = sha256(key).digest()
+    encrypted_block = bytes(x ^ y for x, y in zip(block, key_hash))
+    return encrypted_block
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def pad_data(data, block_size):
+    padding_length = block_size - (len(data) % block_size)
+    padding = bytes([padding_length] * padding_length)
+    return data + padding
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def write_data_to_hex_file(data, filename):
+    hex_data = b64encode(data).decode('utf-8')
+    with open(filename, 'w') as file:
+        file.write(hex_data)
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def read_data_from_hex_file(filename):
+    with open(filename, 'r') as file:
+        hex_data = file.read()
+    return b64decode(hex_data)
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def unpad_data(data):
+    padding_length = data[-1]
+    return data[:-padding_length]
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def decrypt_block(block, key):
+    key_hash = sha256(key).digest()
+    decrypted_block = bytes(x ^ y for x, y in zip(block, key_hash))
+    return decrypted_block
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def save_decrypted_result(decrypted_data):
+    result_file = 'data/decrypted_result.txt'
+    with open(result_file, 'w') as file:
+        file.write(decrypted_data)
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def write_to_result(decrypted_plaintext):
+    result_file= 'data/result.txt'
+    with open(result_file, 'w') as file:
+        file.write(decrypted_plaintext)
+
+# Functions from the second code
+ciphertext_file = 'data/ciphertext.txt'
+iv_file = 'data/iv.txt'
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def generate_random_iv():
+    return os.urandom(16)
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def encrypt_aes_cbc(plaintext, key, iv):
     block_size = 16
-    previous_block = ini_v
+    plaintext = pad_data(plaintext.encode('utf-8'), block_size)
+    ciphertext = b''
+    prev_block = iv
+
+    for i in range(0, len(plaintext), block_size):
+        block = plaintext[i:i + block_size]
+        xor_block = bytes(x ^ y for x, y in zip(block, prev_block))
+        encrypted_block = encrypt_block(xor_block, key)
+        ciphertext += encrypted_block
+        prev_block = encrypted_block
+
+    return ciphertext
+
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def decrypt_aes_cbc(ciphertext, key, iv):
+    block_size = 16
     plaintext = b''
+    prev_block = iv
 
-    for i in range(0, len(cipher), block_size):
-        block = cipher[i:i + block_size]
-        decrypted_block = aes_decrypt_block(block, key)
-        plaintext_block = bytes(x ^ y for x, y in zip(decrypted_block, previous_block))
+    for i in range(0, len(ciphertext), block_size):
+        block = ciphertext[i:i + block_size]
+        decrypted_block = decrypt_block(block, key)
+        plaintext_block = bytes(x ^ y for x, y in zip(decrypted_block, prev_block))
         plaintext += plaintext_block
-        print(plaintext)
-        previous_block = block
+        prev_block = block
 
-    return unpad(plaintext).decode('utf-8')
+    return unpad_data(plaintext).decode('utf-8')
 
-def decrypt():
-    secret_key = read_from_file(s_key)
+# ----------------------------------------------------------------------------
+# No code executed here; only module imports.
+# ----------------------------------------------------------------------------
+def Dec():
+    sk = read_key_from_file()
     print("SECRET KEY READ")
-    print_Key(secret_key)
+    write_key_to_file(sk)
 
-    ciphertext = read_hex_data_from_file(cipher_text)
-    initialization_vector = read_hex_data_from_file(iv)
+    c = read_data_from_hex_file(ciphertext_file)
+    iv = read_data_from_hex_file(iv_file)
 
-    decrypted_text = decrypt_aes_cbc(ciphertext, secret_key, initialization_vector)
-    print("DECRYPTED TEXT:", decrypted_text)
-    result(decrypted_text)
+    decrypted_plaintext = decrypt_aes_cbc(c, sk, iv)
+    print("DECRYPTED TEXT: ", decrypted_plaintext)
+    write_to_result(decrypted_plaintext)
 
-def testing():
-    skey = genkey()
-    print_Key(skey)
-    write_key_to_file(skey)
+# ----------------------------------------------------------------------------
+# Encode Function: This function is aimed at encoding
+# ----------------------------------------------------------------------------
+def Enc():
+    sk = read_key_from_file()
+    print("SECRET KEY READ")
+    print_key(sk)
 
-decrypt()
+    f = read_plain_text()
+    print("PLAIN TEXT: ", f)
+
+    iv = generate_random_iv()
+    print("RANDOM IV: ", iv)
+
+    c = encrypt_aes_cbc(f, sk, iv)
+    print("CIPHERTEXT: ", c)
+
+    write_data_to_hex_file(c, ciphertext_file)
+    write_data_to_hex_file(iv, iv_file)
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# genKeys: This function is aimed to generate the keys using the generate_key fuction after which we utilize the print_key and write_key_to_file function to print and write the key to the file respectively
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def genKeys():
+    sk = generate_key()
+    print_key(sk)
+    write_key_to_file(sk)
+
+# --------------------------------------------------------------------------------------------------------------------------------------------------------
+# Main function, in this function you will see the call of the 'Key-Generation' function, the Encoding function and the Decoding function
+# --------------------------------------------------------------------------------------------------------------------------------------------------------
+def main():
+    genKeys()
+    Enc()
+    Dec()
+
+# --------------------------------------------------------------------------------------------------------------------------------------------------------
+# This calls the main function in order to run the code
+# --------------------------------------------------------------------------------------------------------------------------------------------------------
+if __name__ == "__main__":
+    main()
