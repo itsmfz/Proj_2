@@ -4,29 +4,32 @@ import secrets       # Cryptographically strong random number generation
 from hashlib import sha256  # Hash function for secure hashing
 from base64 import b64encode, b64decode  # Encoding/decoding data in base64 format
 
-
-
-
-
 # ----------------------------------------------------------------------------
-# No code executed here; only module imports.
+# Generate Key Function: This function is to generate a random 256 bit encryptioon key
 # ----------------------------------------------------------------------------
 def generate_key():
-    encryption_key = secrets.token_bytes(32)
+    #Generates a random 256-bit encryption key.
+    #bytes: A 256-bit (32-byte) random encryption key.
+    encryption_key = secrets.token_bytes(32) # Generate a 32-byte random key
     return encryption_key
 
 # ----------------------------------------------------------------------------
-# No code executed here; only module imports.
+# Write key to file: This writes to the key.txt file
 # ----------------------------------------------------------------------------
 def write_key_to_file(key, filename='data/key.txt'):
+    #Writes an encryption key to a text file in hexadecimal format.
+    #key (bytes): The encryption key to be written.
+    #filename : The name of the file to write the key to. Default is 'data/key.txt'.
     hex_key = key.hex()
     with open(filename, 'w') as file:
         file.write(hex_key)
 
 # ----------------------------------------------------------------------------
-# No code executed here; only module imports.
+# Read key from file: This reads the key from the key.txt file.
 # ----------------------------------------------------------------------------
 def read_key_from_file(filename='data/key.txt'):
+    #Reads an encryption key from a text file in hexadecimal format
+
     try:
         with open(filename, 'r') as file:
             hex_key = file.read().strip()
